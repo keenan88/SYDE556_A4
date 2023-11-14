@@ -12,6 +12,7 @@ import numpy as np
 
 #Resource: https://www.nengo.ai/nengo/examples/usage/tuning-curves.html
 
+nengo.rc['progress']['progress_bar'] = 'nengo.utils.progress.TerminalProgressBar'
 model = nengo.Network()
 
 
@@ -19,7 +20,7 @@ with model:
     N = 100
     
     rmses = []
-    Trefs = np.arange(1, 6, 1) / 1000
+    Trefs = np.arange(1, 5.5, 0.5) / 1000
     
     radius_ = 1
     
@@ -35,7 +36,7 @@ with model:
             max_rates = np.random.uniform(low = 100, high = 200, size=N),
             #intercepts = np.random.uniform(low = -1, high = 1, size=N),
             noise = nengo.processes.WhiteNoise(dist = nengo.dists.Gaussian(mean=0, std=0.1 * 200)),
-            neuron_type = nengo.neurons.LIFRate(tau_rc = 0.02, tau_ref = Tref)
+            neuron_type = nengo.neurons.LIF(tau_rc = 0.02, tau_ref = Tref)
         )
         
         loopback = nengo.Connection(ens_1d, ens_1d)

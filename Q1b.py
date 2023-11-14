@@ -32,7 +32,7 @@ with model:
             max_rates = np.random.uniform(low = 100, high = 200, size=N),
             #intercepts = np.random.uniform(low = -1, high = 1, size=N),
             noise = nengo.processes.WhiteNoise(dist = nengo.dists.Gaussian(mean=0, std=0.1 * 200)),
-            neuron_type = nengo.neurons.LIFRate(tau_rc = 0.02, tau_ref = 0.002)
+            neuron_type = nengo.neurons.LIF(tau_rc = 0.02, tau_ref = 0.002)
         )
         
         loopback = nengo.Connection(ens_1d, ens_1d)

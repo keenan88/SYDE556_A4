@@ -10,9 +10,10 @@ import matplotlib.pyplot as plt
 import nengo
 import numpy as np
 
-
 model = nengo.Network()
 
+def stimulus(t):
+    return 0.0 if t < 0.04 else (0.9 if t < 1.0 else 0.0)
 
 with model:
     
@@ -22,7 +23,7 @@ with model:
         
         radius_ = 1
             
-        stim = nengo.Node(lambda t: 0.0 if t < 0.04 else (0.9 if t < 1.0 else 0.0))
+        stim = nengo.Node(lambda t: stimulus(t))
         
         # Noise totally murks this
         ens1 = nengo.Ensemble(
@@ -31,23 +32,34 @@ with model:
             dimensions = 1,
             encoders = np.matrix(np.random.choice([-1, 1], size = N1)).T,
             max_rates = np.random.uniform(low = 100, high = 200, size=N1),
-            #intercepts = np.random.uniform(low = -1, high = 1, size=N),
+            intercepts = np.random.uniform(low = -1, high = 1, size=N1),
             #noise = nengo.processes.WhiteNoise(dist = nengo.dists.Gaussian(mean=0, std=0.1 * 200)),
-            neuron_type = nengo.neurons.LIFRate(tau_rc = 0.02, tau_ref = 0.002)
+            neuron_type = nengo.neurons.LIF(tau_rc = 0.02, tau_ref = 0.002)
         )
         
+        tau_stim = 0.005
         stim_connection = nengo.Connection(
             stim, 
             ens1,
-            synapse = nengo.synapses.Alpha(tau = 0.005)
+            synapse = nengo.synapses.Alpha(tau = tau_stim),
+            transform = [[tau_stim]]
+            #synapse = 0.005
         )
-    
+        
+        tau_loopback = 0.05
         loopback = nengo.Connection(
             ens1, 
             ens1,
-            synapse = nengo.synapses.Alpha(tau = 0.05),
+            synapse = tau_loopback,
+            transform = [[1]] # No scaling, just feed neuron state back into itself
+#            synapse = nengo.synapses.Alpha(tau = 0.05),
+#            synapse = 0.05
         )
         
+        
+        ideal_probe_stim = nengo.Probe(
+            target = stim, 
+        ) 
         
         probe_stim = nengo.Probe(
             target = stim, 
@@ -70,23 +82,22 @@ with model:
             
             
             sim.run(1.5)
-            
-            time = np.linspace(0, 1.5, 1000)
-            step = (1.5 - 0) / 1000
+            sim_timescale = np.linspace(0, sim.time, sim.n_steps)
+    
             f_sum = 0
             f_des = []
-            for i in range(len(time)):
-                t = time[i]
-                f = 0.0 if t < 0.04 else (0.9 if t < 1.0 else 0.0)
-                f_sum += f * step
+            for step in range(len(sim_timescale)):
+                t = sim_timescale[step]
+                f = stimulus(t)
+                f_sum += f * sim.dt
                 f_des.append(f_sum)
                 
                 
             
             plt.plot(sim.trange(), sim.data[probe_stim], label='Stimulus')
-            plt.plot(sim.trange(), sim.data[probe_conn1], label='Ensemble Input')
+            #plt.plot(sim.trange(), sim.data[probe_conn1], label='Ensemble Input')
             plt.plot(sim.trange(), sim.data[probe_ens1], label='Ensemble Output')
-            plt.plot(time, f_des, label='Desired output')
+            plt.plot(sim_timescale, f_des, label='Desired output')
             plt.legend()
             plt.xlabel('Time (s)')
             plt.ylabel('Neuron Output')

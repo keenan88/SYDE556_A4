@@ -36,16 +36,23 @@ with model:
             neuron_type = nengo.neurons.SpikingRectifiedLinear()
         )
         
+        tau_stim = 0.005
         stim_connection = nengo.Connection(
             stim, 
             ens1,
-            synapse = nengo.synapses.Alpha(tau = 0.005)
+            synapse = nengo.synapses.Alpha(tau = tau_stim),
+            transform = [[tau_stim]]
+            #synapse = 0.005
         )
-    
+        
+        tau_loopback = 0.05
         loopback = nengo.Connection(
             ens1, 
             ens1,
-            synapse = nengo.synapses.Alpha(tau = 0.05),
+            synapse = tau_loopback,
+            transform = [[1]] # No scaling, just feed neuron state back into itself
+#            synapse = nengo.synapses.Alpha(tau = 0.05),
+#            synapse = 0.05
         )
         
         
